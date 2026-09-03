@@ -15,6 +15,9 @@
 
 /* ----------------------------- CONFIGURACIÓN ----------------------------- */
 var CONFIG = {
+  // ID de la Hoja de Google donde se guardan los registros.
+  // Es el tramo largo de la URL: docs.google.com/spreadsheets/d/ESTE_ID/edit
+  HOJA_ID:    '1te3HsH8EVOg7bqLmohpC_CXhhewHecoifd0o4_SlTTY',
   HOJA:       'Asistencia',
   NOTIFICAR:  'ab.lenincarrion21@gmail.com',   // recibe el aviso de cada registro
   EVENTO:     'Jornada de Integración · Colegio de Abogados de SDT',
@@ -206,8 +209,19 @@ function filaHtml_(k, v) {
 }
 
 /* -------------------------------- UTILIDADES ------------------------------ */
+/** Funciona igual si el script es independiente o está unido a la hoja. */
+function libro_() {
+  if (CONFIG.HOJA_ID) return SpreadsheetApp.openById(CONFIG.HOJA_ID);
+  var activo = SpreadsheetApp.getActiveSpreadsheet();
+  if (!activo) throw new Error('Falta configurar CONFIG.HOJA_ID');
+  return activo;
+}
+
 function hoja_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = libro_();
+  if (ss.getName() === 'Hoja de cálculo sin título' || ss.getName() === 'Untitled spreadsheet') {
+    ss.rename('Asistencia · Jornada de Integración 2026');
+  }
   var h = ss.getSheetByName(CONFIG.HOJA) || ss.insertSheet(CONFIG.HOJA);
   if (h.getLastRow() === 0) {
     h.appendRow(CABECERAS);
