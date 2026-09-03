@@ -79,13 +79,22 @@ function doPost(e) {
     var resumen = { total: 0, si: 0, no: 0 };
     try { resumen = resumen_(hoja); } catch (err) {}
 
-    notificar_(fila, existente > 0, resumen);
-    if (CONFIG.CONFIRMAR_AL_COLEGA && viene) { confirmar_(nombre, email); }
+    // El registro ya está guardado. Si el correo falla (cuota de Gmail, red),
+    // no debe tumbar la inscripción del colega.
+    var correo = 'enviado';
+    try {
+      notificar_(fila, existente > 0, resumen);
+      if (CONFIG.CONFIRMAR_AL_COLEGA && viene) { confirmar_(nombre, email); }
+    } catch (err) {
+      correo = 'pendiente: ' + (err && err.message ? err.message : err);
+      Logger.log('Fallo el correo: ' + correo);
+    }
 
     return json_({
       ok: true,
       registro: codigo_(cedula),
       actualizado: existente > 0,
+      correo: correo,
       totales: resumen
     });
 
@@ -104,7 +113,14 @@ function doPost(e) {
  */
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  if (p.ping) return json_({ ok: true, servicio: 'registro-asistencia', evento: CONFIG.EVENTO });
+  if (p.ping) {
+    return json_({
+      ok: true,
+      servicio: 'registro-asistencia',
+      evento: CONFIG.EVENTO,
+      correosRestantesHoy: MailApp.getRemainingDailyQuota()
+    });
+  }
 
   if (p.admin !== CONFIG.ADMIN_KEY) {
     return json_({ ok: false, error: 'No autorizado' });
