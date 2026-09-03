@@ -289,6 +289,25 @@ function json_(o) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/* Utilidad: borra desde el editor los registros marcados como prueba.
+   Útil antes del evento para dejar la hoja limpia. */
+function limpiarPruebas() {
+  var h = hoja_();
+  var n = h.getLastRow();
+  if (n < 2) { Logger.log('La hoja ya está vacía.'); return; }
+
+  var origen = h.getRange(2, 11, n - 1, 1).getValues();   // columna Origen
+  var borradas = 0;
+  for (var i = origen.length - 1; i >= 0; i--) {          // de abajo hacia arriba
+    if (String(origen[i][0]).toLowerCase().indexOf('prueba') !== -1) {
+      h.deleteRow(i + 2);
+      borradas++;
+    }
+  }
+  Logger.log('Filas de prueba eliminadas: ' + borradas);
+  Logger.log('RESUMEN: ' + JSON.stringify(resumen_(hoja_())));
+}
+
 /* Ejecuta esta función una vez desde el editor: autoriza los permisos,
    crea la hoja si hace falta y muestra su enlace en el registro. */
 function prueba() {
