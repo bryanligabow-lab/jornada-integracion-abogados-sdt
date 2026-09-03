@@ -1,0 +1,10 @@
+{
+  "name": "registro-jornada-abogados-sdt",
+  "private": true,
+  "type": "module",
+  "description": "Backend de registro de asistencia · Jornada de Integración CASDT",
+  "dependencies": {
+    "@netlify/blobs": "^11.0.3",
+    "@netlify/functions": "^6.0.0"
+  }
+}

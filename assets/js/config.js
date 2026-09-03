@@ -5,6 +5,6 @@
               (termina en /exec). Ver README.md, paso 2.
    =========================================================== */
 window.APP_CONFIG = {
-  ENDPOINT: "PEGA_AQUI_LA_URL_DEL_APPS_SCRIPT",
+  ENDPOINT: "https://registro-jornada-abogados-sdt.netlify.app/registro",
   EVENTO: "Jornada de Integración · Colegio de Abogados de Santo Domingo de los Tsáchilas"
 };

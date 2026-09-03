@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Backend · Registro Jornada de Integración</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#07231c;color:#e9f2ec;margin:0;
+       display:grid;place-items:center;min-height:100vh;padding:24px;text-align:center}
+  a{color:#7ed957}
+  code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<div>
+  <h1>Registro de Asistencia · API</h1>
+  <p>Este dominio solo procesa los registros. La invitación está en<br>
+  <a href="https://bryanligabow-lab.github.io/jornada-integracion-abogados-sdt/">bryanligabow-lab.github.io/jornada-integracion-abogados-sdt</a></p>
+  <p><code>POST /registro</code> · <code>GET /registro?ping=1</code></p>
+
+  <!-- Formulario estático requerido por Netlify Forms (no se usa a mano) -->
+  <form name="asistencia" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="text" name="bot-field">
+    <input type="text" name="nombre">
+    <input type="text" name="cedula">
+    <input type="text" name="matricula">
+    <input type="text" name="telefono">
+    <input type="email" name="email">
+    <input type="text" name="asistencia">
+    <input type="text" name="deporte">
+    <textarea name="comentario"></textarea>
+    <input type="text" name="codigo">
+  </form>
+</div>
+</body>
+</html>

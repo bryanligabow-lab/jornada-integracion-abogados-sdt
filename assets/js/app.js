@@ -117,7 +117,7 @@
 
     doneMsg.textContent = viene
       ? "Gracias, " + nombreCorto + ". Tu asistencia quedó registrada. " +
-        "Te enviamos la confirmación a " + d.email + "."
+        "Guarda tu código por si te lo piden al ingresar."
       : "Gracias por avisarnos, " + nombreCorto + ". Registramos que no podrás acompañarnos. ¡Te esperamos en la próxima!";
 
     if (res && res.registro) doneMsg.textContent += " (Código: " + res.registro + ")";
