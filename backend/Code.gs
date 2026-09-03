@@ -15,9 +15,10 @@
 
 /* ----------------------------- CONFIGURACIÓN ----------------------------- */
 var CONFIG = {
-  // ID de la Hoja de Google donde se guardan los registros.
-  // Es el tramo largo de la URL: docs.google.com/spreadsheets/d/ESTE_ID/edit
-  HOJA_ID:    '1te3HsH8EVOg7bqLmohpC_CXhhewHecoifd0o4_SlTTY',
+  // Déjalo vacío: la primera ejecución crea la hoja y guarda su ID solo.
+  // Si ya tienes una hoja, pega aquí el tramo largo de su URL:
+  // docs.google.com/spreadsheets/d/ESTE_ID/edit
+  HOJA_ID:    '',
   HOJA:       'Asistencia',
   NOTIFICAR:  'ab.lenincarrion21@gmail.com',   // recibe el aviso de cada registro
   EVENTO:     'Jornada de Integración · Colegio de Abogados de SDT',
@@ -209,12 +210,31 @@ function filaHtml_(k, v) {
 }
 
 /* -------------------------------- UTILIDADES ------------------------------ */
-/** Funciona igual si el script es independiente o está unido a la hoja. */
+/**
+ * Devuelve el libro de cálculo, lo encuentre o no:
+ *   1. CONFIG.HOJA_ID, si lo llenaste a mano
+ *   2. el ID que el propio script guardó en la primera ejecución
+ *   3. la hoja a la que esté unido el script
+ *   4. si nada de eso existe, crea una hoja nueva y recuerda su ID
+ */
 function libro_() {
-  if (CONFIG.HOJA_ID) return SpreadsheetApp.openById(CONFIG.HOJA_ID);
-  var activo = SpreadsheetApp.getActiveSpreadsheet();
-  if (!activo) throw new Error('Falta configurar CONFIG.HOJA_ID');
-  return activo;
+  var props = PropertiesService.getScriptProperties();
+  var id = CONFIG.HOJA_ID || props.getProperty('HOJA_ID');
+
+  if (id) {
+    try { return SpreadsheetApp.openById(id); }
+    catch (err) { props.deleteProperty('HOJA_ID'); }   // el ID ya no sirve
+  }
+
+  try {
+    var activo = SpreadsheetApp.getActiveSpreadsheet();
+    if (activo) return activo;
+  } catch (err) {}
+
+  var nueva = SpreadsheetApp.create('Asistencia · Jornada de Integración 2026');
+  props.setProperty('HOJA_ID', nueva.getId());
+  Logger.log('Hoja creada: ' + nueva.getUrl());
+  return nueva;
 }
 
 function hoja_() {
@@ -269,8 +289,11 @@ function json_(o) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/* Ejecuta esta función una vez desde el editor para autorizar los permisos. */
+/* Ejecuta esta función una vez desde el editor: autoriza los permisos,
+   crea la hoja si hace falta y muestra su enlace en el registro. */
 function prueba() {
-  hoja_();
-  Logger.log(JSON.stringify(resumen_(hoja_())));
+  var h = hoja_();
+  Logger.log('HOJA: ' + h.getParent().getUrl());
+  Logger.log('RESUMEN: ' + JSON.stringify(resumen_(h)));
+  Logger.log('Todo listo. Ahora usa Implementar → Nueva implementación → Aplicación web.');
 }
