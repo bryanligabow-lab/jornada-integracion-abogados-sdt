@@ -26,8 +26,7 @@ var CONFIG = {
 
 var CABECERAS = [
   'Fecha de registro', 'Código', 'Nombres y apellidos', 'Cédula', 'Matrícula',
-  'Celular', 'Correo', 'Asistencia', 'Acompañantes', 'Actividades deportivas',
-  'Comentario', 'Total personas', 'Origen'
+  'Celular', 'Correo', 'Asistencia', 'Actividades deportivas', 'Comentario', 'Origen'
 ];
 
 /* --------------------------------- POST --------------------------------- */
@@ -49,7 +48,6 @@ function doPost(e) {
     var hoja  = hoja_();
     var ahora = new Date();
     var viene = String(d.asistencia || '').indexOf('Sí') === 0;
-    var acomp = Math.max(0, Math.min(10, Number(d.acompanantes) || 0));
 
     var fila = [
       ahora,
@@ -60,10 +58,8 @@ function doPost(e) {
       "'" + String(limpiar_(d.telefono)).replace(/\D+/g, ''),
       email,
       limpiar_(d.asistencia),
-      viene ? acomp : 0,
       limpiar_(d.deporte),
       limpiar_(d.comentario),
-      viene ? acomp + 1 : 0,
       limpiar_(d.origen) || 'web'
     ];
 
@@ -75,11 +71,11 @@ function doPost(e) {
       hoja.appendRow(fila);
     }
 
-    var resumen = { total: 0, personas: 0, si: 0, no: 0 };
+    var resumen = { total: 0, si: 0, no: 0 };
     try { resumen = resumen_(hoja); } catch (err) {}
 
     notificar_(fila, existente > 0, resumen);
-    if (CONFIG.CONFIRMAR_AL_COLEGA && viene) { confirmar_(nombre, email, acomp); }
+    if (CONFIG.CONFIRMAR_AL_COLEGA && viene) { confirmar_(nombre, email); }
 
     return json_({
       ok: true,
@@ -152,14 +148,13 @@ function notificar_(f, actualizado, r) {
         filaHtml_('Celular / WhatsApp', String(f[5]).replace(/^'/, '')) +
         filaHtml_('Correo', f[6]) +
         filaHtml_('Asistencia', '<b>' + f[7] + '</b>') +
-        filaHtml_('Acompañantes', f[8]) +
-        filaHtml_('Actividades deportivas', f[9]) +
-        filaHtml_('Comentario', f[10] || '—') +
+        filaHtml_('Actividades deportivas', f[8]) +
+        filaHtml_('Comentario', f[9] || '—') +
         filaHtml_('Código', f[1]) +
       '</table>' +
       '<div style="background:#f7f3e8;padding:16px 20px;font-size:13px;color:#0d1b16">' +
-        '<b>Acumulado:</b> ' + r.si + ' confirmados · ' + r.no + ' no asisten · ' +
-        '<b>' + r.personas + ' personas</b> esperadas (incluye acompañantes).' +
+        '<b>Acumulado:</b> <b>' + r.si + ' confirmados</b> · ' + r.no + ' no asisten · ' +
+        r.total + ' registros en total.' +
       '</div>' +
     '</div>';
 
@@ -172,7 +167,7 @@ function notificar_(f, actualizado, r) {
   });
 }
 
-function confirmar_(nombre, email, acomp) {
+function confirmar_(nombre, email) {
   var html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e3e3e3;border-radius:10px;overflow:hidden">' +
       '<div style="background:#07231c;padding:22px 20px;text-align:center;color:#fff">' +
@@ -185,7 +180,6 @@ function confirmar_(nombre, email, acomp) {
         '<table style="width:100%;border-collapse:collapse;font-size:14px;margin:0 0 16px">' +
           filaHtml_('Fecha y hora', CONFIG.FECHA) +
           filaHtml_('Lugar', CONFIG.LUGAR) +
-          filaHtml_('Acompañantes', String(acomp)) +
         '</table>' +
         '<p style="margin:0 0 14px">Se brindará <b>un plato de fritada</b> para compartir, y disfrutaremos de actividades deportivas, recreativas y bailables.</p>' +
         '<p style="margin:0">¡Le esperamos para seguir fortaleciendo nuestra gran familia de abogados!</p>' +
@@ -221,6 +215,7 @@ function hoja_() {
       .setFontWeight('bold').setBackground('#07231c').setFontColor('#ffffff');
     h.setFrozenRows(1);
     h.setColumnWidth(1, 150); h.setColumnWidth(3, 230); h.setColumnWidth(7, 220);
+    h.setColumnWidth(10, 260);
   }
   return h;
 }
@@ -237,13 +232,12 @@ function buscarFila_(hoja, cedula) {
 
 function resumen_(hoja) {
   var n = hoja.getLastRow();
-  var r = { total: 0, personas: 0, si: 0, no: 0 };
+  var r = { total: 0, si: 0, no: 0 };
   if (n < 2) return r;
-  var v = hoja.getRange(2, 8, n - 1, 5).getValues();   // Asistencia .. Total personas
+  var v = hoja.getRange(2, 8, n - 1, 1).getValues();   // columna Asistencia
   v.forEach(function (row) {
     r.total++;
-    if (String(row[0]).indexOf('Sí') === 0) { r.si++; r.personas += Number(row[4]) || 1; }
-    else { r.no++; }
+    if (String(row[0]).indexOf('Sí') === 0) { r.si++; } else { r.no++; }
   });
   return r;
 }

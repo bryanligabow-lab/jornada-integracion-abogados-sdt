@@ -42,7 +42,7 @@
     <div class="kpis">
       <div class="kpi"><b id="kSi">0</b><span>CONFIRMADOS</span></div>
       <div class="kpi"><b id="kNo">0</b><span>NO ASISTEN</span></div>
-      <div class="kpi"><b id="kPer">0</b><span>PERSONAS</span></div>
+      <div class="kpi"><b id="kTot">0</b><span>REGISTROS</span></div>
     </div>
     <div id="lista"></div>
     <a class="btn btn--ghost" id="csv" href="#" target="_blank" rel="noopener">Descargar CSV</a>
@@ -63,13 +63,12 @@
         if(!d.ok) throw new Error(d.error||'Error');
         document.getElementById('kSi').textContent=d.totales.si;
         document.getElementById('kNo').textContent=d.totales.no;
-        document.getElementById('kPer').textContent=d.totales.personas;
+        document.getElementById('kTot').textContent=d.totales.total;
         document.getElementById('csv').href=window.APP_CONFIG.ENDPOINT+'?admin='+encodeURIComponent(k)+'&formato=csv';
         document.getElementById('lista').innerHTML=d.registros.slice().reverse().map(function(r){
           var si=String(r['Asistencia']).indexOf('Sí')===0;
           return '<div class="row"><b>'+r['Nombres y apellidos']+'</b>'+
             '<small>'+r['Cédula']+' · '+r['Celular']+'<br>'+r['Correo']+
-            (Number(r['Acompañantes'])>0?'<br>+'+r['Acompañantes']+' acompañante(s)':'')+
             (r['Comentario']?'<br>“'+r['Comentario']+'”':'')+'</small>'+
             '<span class="tag '+(si?'si':'no')+'">'+r['Asistencia']+'</span></div>';
         }).join('');

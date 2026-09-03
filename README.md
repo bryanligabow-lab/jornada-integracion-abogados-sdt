@@ -73,15 +73,14 @@ Guarda, haz commit y sube el cambio. En 1–2 minutos GitHub Pages se actualiza.
 ## Qué se guarda por registro
 
 `Fecha de registro · Código · Nombres y apellidos · Cédula · Matrícula · Celular ·
-Correo · Asistencia · Acompañantes · Actividades deportivas · Comentario ·
-Total personas · Origen`
+Correo · Asistencia · Actividades deportivas · Comentario · Origen`
 
 Si una **cédula ya existe**, el registro se **actualiza** en lugar de duplicarse.
 
 ## Correos
 
 - **Al organizador** (`CONFIG.NOTIFICAR`): aviso por cada registro con todos los
-  datos y el acumulado (confirmados / no asisten / personas esperadas).
+  datos y el acumulado (confirmados / no asisten / total de registros).
 - **Al colega**: confirmación con fecha, hora y lugar (se puede desactivar con
   `CONFIG.CONFIRMAR_AL_COLEGA = false`).
 

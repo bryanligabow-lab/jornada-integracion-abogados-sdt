@@ -10,28 +10,13 @@
   var formErr  = document.getElementById("formErr");
   var done     = document.getElementById("done");
   var doneMsg  = document.getElementById("doneMsg");
-  var acompVal = document.getElementById("acompVal");
-  var acompInp = document.getElementById("acompanantes");
   var secForm  = document.getElementById("registro");
 
-  /* ---------- contador de acompañantes ---------- */
-  var acomp = 0;
-  document.querySelectorAll("[data-step]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      acomp = Math.min(10, Math.max(0, acomp + Number(b.dataset.step)));
-      acompVal.textContent = acomp;
-      acompInp.value = acomp;
-    });
-  });
-
   /* ---------- mostrar/ocultar campos según asistencia ---------- */
-  var wrapAcomp   = document.getElementById("wrapAcomp");
   var wrapDeporte = document.getElementById("wrapDeporte");
   form.querySelectorAll('input[name="asistencia"]').forEach(function (r) {
     r.addEventListener("change", function () {
-      var viene = form.asistencia.value.indexOf("Sí") === 0;
-      wrapAcomp.hidden = !viene;
-      wrapDeporte.hidden = !viene;
+      wrapDeporte.hidden = form.asistencia.value.indexOf("Sí") !== 0;
     });
   });
 
@@ -80,7 +65,6 @@
       telefono:     soloDigitos(form.telefono.value),
       email:        form.email.value.trim().toLowerCase(),
       asistencia:   form.asistencia.value,
-      acompanantes: viene ? Number(acompInp.value) : 0,
       deporte:      viene ? form.deporte.value : "No aplica",
       comentario:   form.comentario.value.trim(),
       origen:       "web-movil",
@@ -132,9 +116,8 @@
     var nombreCorto = d.nombre.split(" ")[0];
 
     doneMsg.textContent = viene
-      ? "Gracias, " + nombreCorto + ". Tu asistencia quedó registrada" +
-        (d.acompanantes > 0 ? " junto a " + d.acompanantes + " acompañante" + (d.acompanantes > 1 ? "s" : "") : "") +
-        ". Te enviamos la confirmación a " + d.email + "."
+      ? "Gracias, " + nombreCorto + ". Tu asistencia quedó registrada. " +
+        "Te enviamos la confirmación a " + d.email + "."
       : "Gracias por avisarnos, " + nombreCorto + ". Registramos que no podrás acompañarnos. ¡Te esperamos en la próxima!";
 
     if (res && res.registro) doneMsg.textContent += " (Código: " + res.registro + ")";
@@ -153,8 +136,7 @@
 
   document.getElementById("again").addEventListener("click", function () {
     form.reset();
-    acomp = 0; acompVal.textContent = "0"; acompInp.value = "0";
-    wrapAcomp.hidden = false; wrapDeporte.hidden = false;
+    wrapDeporte.hidden = false;
     ["nombre", "cedula", "telefono", "email", "acepta"].forEach(function (k) { setErr(k, ""); });
     done.hidden = true;
     secForm.hidden = false;
