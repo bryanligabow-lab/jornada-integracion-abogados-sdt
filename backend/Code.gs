@@ -111,6 +111,8 @@ function doGet(e) {
 
   var hoja = hoja_();
   var datos = hoja.getDataRange().getValues();
+  var cabecera = datos.length ? datos[0] : [];
+  datos = [cabecera].concat(datos.slice(1).filter(function (f) { return conCedula_(f[3]); }));
 
   if (p.formato === 'csv') {
     var csv = datos.map(function (r) {
@@ -268,12 +270,18 @@ function resumen_(hoja) {
   var n = hoja.getLastRow();
   var r = { total: 0, si: 0, no: 0 };
   if (n < 2) return r;
-  var v = hoja.getRange(2, 8, n - 1, 1).getValues();   // columna Asistencia
+  var v = hoja.getRange(2, 4, n - 1, 5).getValues();   // Cédula .. Asistencia
   v.forEach(function (row) {
+    if (!conCedula_(row[0])) return;                   // fila vacía o borrada a mano
     r.total++;
-    if (String(row[0]).indexOf('Sí') === 0) { r.si++; } else { r.no++; }
+    if (String(row[4]).indexOf('Sí') === 0) { r.si++; } else { r.no++; }
   });
   return r;
+}
+
+/** Una fila cuenta como registro solo si tiene cédula. */
+function conCedula_(v) {
+  return String(v == null ? '' : v).replace(/\D+/g, '').length === 10;
 }
 
 function codigo_(cedula) {
