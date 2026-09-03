@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Lista de asistencia · Jornada de Integración</title>
+<link rel="icon" href="assets/img/escudo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+  .adm{padding:22px 20px 40px}
+  .adm h1{margin:0 0 4px;font-size:21px;font-weight:900}
+  .adm p.sub{margin:0 0 18px;font-size:12.5px;color:#a9c3b5}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .kpi{padding:12px 8px;border-radius:12px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+  .kpi b{display:block;font-size:22px;font-weight:900;color:#7ed957}
+  .kpi span{font-size:10px;font-weight:800;letter-spacing:.6px;color:#cfe0d6}
+  .row{padding:13px 14px;margin-bottom:8px;border-radius:12px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.13)}
+  .row b{font-size:14px}
+  .row small{display:block;margin-top:3px;font-size:11.5px;color:#a9c3b5;line-height:1.5}
+  .tag{display:inline-block;margin-top:6px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800}
+  .tag.si{background:rgba(126,217,87,.2);color:#7ed957}
+  .tag.no{background:rgba(232,33,60,.2);color:#ff8a9c}
+</style>
+</head>
+<body>
+<div class="phone"><main class="app"><section class="adm">
+  <h1>Lista de asistencia</h1>
+  <p class="sub">Jornada de Integración · 05/09/2026</p>
+
+  <div id="login" class="form">
+    <label class="f">
+      <span class="f__l">Clave de administrador</span>
+      <input class="f__i" type="password" id="key" placeholder="Clave">
+    </label>
+    <button class="btn" id="go" type="button">VER REGISTROS</button>
+    <p class="form__err" id="err" hidden></p>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="kpis">
+      <div class="kpi"><b id="kSi">0</b><span>CONFIRMADOS</span></div>
+      <div class="kpi"><b id="kNo">0</b><span>NO ASISTEN</span></div>
+      <div class="kpi"><b id="kPer">0</b><span>PERSONAS</span></div>
+    </div>
+    <div id="lista"></div>
+    <a class="btn btn--ghost" id="csv" href="#" target="_blank" rel="noopener">Descargar CSV</a>
+  </div>
+</section></main></div>
+
+<script src="assets/js/config.js"></script>
+<script>
+(function(){
+  var err=document.getElementById('err');
+  function cargar(){
+    var k=document.getElementById('key').value.trim();
+    if(!k) return;
+    err.hidden=true;
+    fetch(window.APP_CONFIG.ENDPOINT+'?admin='+encodeURIComponent(k))
+      .then(function(r){return r.json()})
+      .then(function(d){
+        if(!d.ok) throw new Error(d.error||'Error');
+        document.getElementById('kSi').textContent=d.totales.si;
+        document.getElementById('kNo').textContent=d.totales.no;
+        document.getElementById('kPer').textContent=d.totales.personas;
+        document.getElementById('csv').href=window.APP_CONFIG.ENDPOINT+'?admin='+encodeURIComponent(k)+'&formato=csv';
+        document.getElementById('lista').innerHTML=d.registros.slice().reverse().map(function(r){
+          var si=String(r['Asistencia']).indexOf('Sí')===0;
+          return '<div class="row"><b>'+r['Nombres y apellidos']+'</b>'+
+            '<small>'+r['Cédula']+' · '+r['Celular']+'<br>'+r['Correo']+
+            (Number(r['Acompañantes'])>0?'<br>+'+r['Acompañantes']+' acompañante(s)':'')+
+            (r['Comentario']?'<br>“'+r['Comentario']+'”':'')+'</small>'+
+            '<span class="tag '+(si?'si':'no')+'">'+r['Asistencia']+'</span></div>';
+        }).join('');
+        document.getElementById('login').hidden=true;
+        document.getElementById('panel').hidden=false;
+      })
+      .catch(function(e){err.textContent='No se pudo cargar: '+e.message;err.hidden=false});
+  }
+  document.getElementById('go').addEventListener('click',cargar);
+  document.getElementById('key').addEventListener('keydown',function(e){if(e.key==='Enter')cargar()});
+})();
+</script>
+</body>
+</html>
