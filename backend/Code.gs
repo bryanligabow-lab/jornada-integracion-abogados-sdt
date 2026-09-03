@@ -8,6 +8,7 @@
  *   2. Lo guarda como una fila en la hoja "Asistencia".
  *   3. Envía un correo de notificación al organizador.
  *   4. Envía un correo de confirmación al colega que se registró.
+ *   5. Mantiene una pestaña "Resumen" con los KPIs (ver crearPanel).
  *
  *  Instalación: ver README.md (paso 2).
  * ===========================================================================
@@ -108,6 +109,8 @@ function doGet(e) {
   if (p.admin !== CONFIG.ADMIN_KEY) {
     return json_({ ok: false, error: 'No autorizado' });
   }
+
+  if (p.panel) return json_({ ok: true, panel: crearPanel_() });
 
   var hoja = hoja_();
   var datos = hoja.getDataRange().getValues();
@@ -295,6 +298,105 @@ function limpiar_(v) {
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Crea (o rehace) la pestaña "Resumen" con los KPIs del evento.
+ * Todo son fórmulas: se actualizan solas con cada registro nuevo.
+ */
+function crearPanel_() {
+  var ss = libro_();
+  hoja_();                                   // garantiza que exista "Asistencia"
+  var A  = "'" + CONFIG.HOJA + "'!";         // referencia a la hoja de datos
+
+  var p = ss.getSheetByName('Resumen');
+  if (p) { p.clear(); p.clearConditionalFormatRules(); }
+  else   { p = ss.insertSheet('Resumen', 0); }
+  ss.setActiveSheet(p);
+  ss.moveActiveSheet(1);
+
+  var VERDE = '#07231c', LIMA = '#7ed957', CREMA = '#f7f3e8', ROJO = '#c8102e';
+
+  p.setHiddenGridlines(true);
+  p.setColumnWidth(1, 30);
+  p.setColumnWidth(2, 240); p.setColumnWidth(3, 140); p.setColumnWidth(4, 140);
+  p.setColumnWidth(5, 240); p.setColumnWidth(6, 140);
+
+  // ---------- encabezado ----------
+  p.getRange('B2:F2').merge()
+   .setValue('JORNADA DE INTEGRACIÓN · 05 DE SEPTIEMBRE DE 2026')
+   .setBackground(VERDE).setFontColor('#ffffff').setFontSize(14).setFontWeight('bold')
+   .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  p.setRowHeight(2, 42);
+
+  p.getRange('B3:F3').merge()
+   .setValue('Resumen de asistencia · se actualiza solo con cada registro')
+   .setFontColor('#666666').setFontSize(10).setHorizontalAlignment('center');
+
+  // ---------- KPIs ----------
+  p.getRange('B5:F5').setValues([['REGISTROS', 'CONFIRMADOS', 'NO ASISTEN', '% CONFIRMACIÓN', 'EN DEPORTIVAS']])
+   .setFontSize(9).setFontWeight('bold').setFontColor('#ffffff')
+   .setBackground('#12603a').setHorizontalAlignment('center');
+
+  var total  = 'COUNTA(' + A + '$D$2:$D)';
+  var vienen = 'COUNTIFS(' + A + '$D$2:$D,"<>",' + A + '$H$2:$H,"Sí*")';
+  p.getRange('B6').setFormula('=' + total);
+  p.getRange('C6').setFormula('=' + vienen);
+  p.getRange('D6').setFormula('=' + total + '-' + vienen);
+  p.getRange('E6').setFormula('=IFERROR(' + vienen + '/' + total + ',0)').setNumberFormat('0%');
+  p.getRange('F6').setFormula('=COUNTIFS(' + A + '$D$2:$D,"<>",' + A + '$H$2:$H,"Sí*",' + A + '$I$2:$I,"Sí")');
+
+  p.getRange('B6:F6').setFontSize(26).setFontWeight('bold')
+   .setHorizontalAlignment('center').setVerticalAlignment('middle')
+   .setBackground(CREMA).setBorder(true, true, true, true, true, false, '#d8d0bd', null);
+  p.setRowHeight(6, 58);
+  p.getRange('C6').setFontColor('#0f7a3d');
+  p.getRange('D6').setFontColor(ROJO);
+
+  // ---------- último registro ----------
+  p.getRange('B8').setValue('ÚLTIMO REGISTRO')
+   .setFontSize(9).setFontWeight('bold').setFontColor('#666666');
+  p.getRange('C8').setFormula('=IFERROR(TEXT(MAX(' + A + '$A$2:$A),"dd/mm/yyyy HH:mm"),"—")')
+   .setFontWeight('bold');
+
+  // ---------- listas ----------
+  p.getRange('B10:C10').merge().setValue('SÍ VIENEN')
+   .setBackground(LIMA).setFontColor(VERDE).setFontWeight('bold').setHorizontalAlignment('center');
+  p.getRange('E10:F10').merge().setValue('NO PODRÁN VENIR')
+   .setBackground(ROJO).setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center');
+
+  p.getRange('B11:C11').setValues([['Nombres y apellidos', 'Celular']]);
+  p.getRange('E11:F11').setValues([['Nombres y apellidos', 'Celular']]);
+  p.getRange('B11:F11').setFontWeight('bold').setFontSize(9);
+  p.getRange('B11:C11').setBackground('#eeeeee');
+  p.getRange('E11:F11').setBackground('#eeeeee');
+
+  var cols = '{' + A + '$C$2:$C,' + A + '$F$2:$F}';
+  p.getRange('B12').setFormula(
+    '=IFERROR(FILTER(' + cols + ',REGEXMATCH(' + A + '$H$2:$H&"","^Sí")),"Aún no hay confirmados")');
+  p.getRange('E12').setFormula(
+    '=IFERROR(FILTER(' + cols + ',' + A + '$H$2:$H<>"",NOT(REGEXMATCH(' + A + '$H$2:$H&"","^Sí"))),"Nadie ha declinado")');
+
+  p.setFrozenRows(11);
+
+  // ---------- colores en la hoja de datos ----------
+  var h = hoja_();
+  var col = h.getRange(2, 8, Math.max(h.getMaxRows() - 1, 1), 1);   // columna Asistencia
+  h.setConditionalFormatRules([
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextStartsWith('Sí').setBackground('#d9ead3').setFontColor('#0d3b2e')
+      .setRanges([col]).build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextStartsWith('No').setBackground('#f4cccc').setFontColor('#7d0a1d')
+      .setRanges([col]).build()
+  ]);
+
+  return { hoja: 'Resumen', url: ss.getUrl() };
+}
+
+/* Arma el panel desde el editor, sin pasar por la URL. */
+function crearPanel() {
+  Logger.log(JSON.stringify(crearPanel_()));
 }
 
 /* Utilidad: borra desde el editor los registros marcados como prueba.
