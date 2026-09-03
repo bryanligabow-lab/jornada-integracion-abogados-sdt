@@ -1,102 +1,84 @@
 # Jornada de Integración · Colegio de Abogados de Santo Domingo de los Tsáchilas
 
 Página web **exclusivamente móvil** con la invitación al evento y un formulario que
-registra la asistencia en una **base de datos (Google Sheets)** y envía un
-**correo de notificación** al organizador más una **confirmación al colega**.
+registra la asistencia en una base de datos y la deja visible en un panel privado.
 
-| Pieza | Tecnología | Costo |
+| Pieza | Dónde vive | Enlace |
 |---|---|---|
-| Página (invitación + formulario) | HTML/CSS/JS estático en **GitHub Pages** | $0 |
-| Base de datos | **Google Sheets** | $0 |
-| Backend + correos | **Google Apps Script** (`MailApp`) | $0 |
+| Invitación + formulario | GitHub Pages | https://bryanligabow-lab.github.io/jornada-integracion-abogados-sdt/ |
+| Panel de inscritos | GitHub Pages | [`/lista.html`](https://bryanligabow-lab.github.io/jornada-integracion-abogados-sdt/lista.html) · clave `casdt2026` |
+| Base de datos + API | Netlify (función `registro`) | https://registro-jornada-abogados-sdt.netlify.app/registro |
+| Respaldo y correo | Netlify Forms | https://app.netlify.com/projects/registro-jornada-abogados-sdt/forms |
+
+Todo en planes gratuitos. Cuenta de Netlify: `bryanligabow@gmail.com`.
 
 ---
+
+## Cómo funciona
+
+1. El colega llena el formulario en GitHub Pages.
+2. La página hace `POST` a la función `registro` en Netlify.
+3. La función valida, guarda el registro en **Netlify Blobs** (un registro por
+   cédula: si la cédula ya existe **actualiza**, no duplica) y lo reenvía a
+   **Netlify Forms**, que es lo que dispara el correo de notificación.
+4. `lista.html` lee esa misma función con la clave de administrador.
 
 ## Estructura
 
 ```
-index.html              Invitación + formulario de registro (móvil)
-lista.html              Panel privado: ver registros y descargar CSV
-assets/css/style.css    Estilos
-assets/js/config.js     ← AQUÍ se pega la URL del backend
-assets/js/app.js        Validación y envío
-assets/img/escudo.jpg   Escudo institucional
-backend/Code.gs         Código para Google Apps Script
+index.html                          Invitación + formulario (móvil)
+lista.html                          Panel privado: KPIs, listado y CSV
+assets/css/style.css                Estilos
+assets/js/config.js                 URL del backend
+assets/js/app.js                    Validación y envío
+assets/img/escudo.jpg               Escudo institucional
+backend-netlify/                    Backend desplegado en Netlify
+  netlify/functions/registro.mts      La función completa
+  public/index.html                   Formulario estático que Netlify Forms detecta
+backend/Code.gs                     Alternativa en Google Apps Script (ver abajo)
 ```
 
----
+## Endpoints
 
-## Paso 1 · Crear la base de datos (2 min)
+| Petición | Qué hace |
+|---|---|
+| `POST /registro` | Guarda el registro (JSON en el cuerpo) |
+| `GET /registro?ping=1` | Prueba de vida |
+| `GET /registro?admin=casdt2026` | Lista completa en JSON |
+| `GET /registro?admin=casdt2026&formato=csv` | Descarga CSV |
+| `GET /registro?admin=casdt2026&borrar=CEDULA` | Elimina un registro |
 
-1. Entra a <https://sheets.google.com> con la cuenta **ab.lenincarrion21@gmail.com**.
-2. Crea una hoja nueva y nómbrala `Asistencia Jornada Integración 2026`.
+La clave está en `CLAVE_ADMIN`, dentro de `backend-netlify/netlify/functions/registro.mts`.
 
-> El código crea sola la pestaña `Asistencia` con sus cabeceras la primera vez que
-> recibe un registro.
+## Volver a desplegar el backend
 
-## Paso 2 · Publicar el backend (5 min)
+Pide el comando al MCP de Netlify (`deploy-site` con
+`siteId a7ce1320-981d-4201-a723-b16051ee6930`) y **ejecútalo dentro de
+`backend-netlify/`**, no en la raíz del repo.
 
-1. En esa misma hoja: menú **Extensiones → Apps Script**.
-2. Borra el contenido de `Código.gs` y pega **todo** el archivo [`backend/Code.gs`](backend/Code.gs).
-3. Guarda (💾). Ejecuta la función `prueba` una vez y **autoriza los permisos**
-   (Google mostrará "Esta app no está verificada" → *Configuración avanzada* →
-   *Ir a … (no seguro)* → **Permitir**). Es tu propio script, es normal.
-4. Botón **Implementar → Nueva implementación**:
-   - Tipo: **Aplicación web**
-   - Ejecutar como: **Yo (ab.lenincarrion21@gmail.com)**
-   - Quién tiene acceso: **Cualquier persona**
-5. Copia la **URL de la app web** (termina en `/exec`).
+## Falta un paso: activar el correo
 
-## Paso 3 · Conectar la página
+Netlify guarda cada registro, pero el aviso por correo hay que encenderlo una vez:
 
-Abre `assets/js/config.js` y reemplaza el marcador por tu URL:
+1. Entra a **https://app.netlify.com/projects/registro-jornada-abogados-sdt/configuration/notifications**
+2. *Add notification* → **Email notification**
+3. Event: *New form submission* · Form: **asistencia**
+4. Email to notify: **ab.lenincarrion21@gmail.com** → *Save*
 
-```js
-window.APP_CONFIG = {
-  ENDPOINT: "https://script.google.com/macros/s/AKfy...../exec",
-  ...
-};
-```
+### Limitación conocida
 
-Guarda, haz commit y sube el cambio. En 1–2 minutos GitHub Pages se actualiza.
+Netlify Forms avisa **al organizador**, pero no envía una confirmación al colega
+que se inscribe. Por eso la página ya no promete ese correo: muestra el código de
+registro en pantalla.
 
-## Paso 4 · Verificar
-
-- `https://<usuario>.github.io/<repo>/` → invitación y formulario.
-- `https://<usuario>.github.io/<repo>/lista.html` → clave `casdt2026` (cámbiala en
-  `CONFIG.ADMIN_KEY` dentro de `Code.gs`).
-- Prueba de humo del backend: abre `TU_URL/exec?ping=1` → debe responder
-  `{"ok":true,...}`.
-
----
-
-## Qué se guarda por registro
-
-`Fecha de registro · Código · Nombres y apellidos · Cédula · Matrícula · Celular ·
-Correo · Asistencia · Actividades deportivas · Comentario · Origen`
-
-Si una **cédula ya existe**, el registro se **actualiza** en lugar de duplicarse.
-
-## Correos
-
-- **Al organizador** (`CONFIG.NOTIFICAR`): aviso por cada registro con todos los
-  datos y el acumulado (confirmados / no asisten / total de registros).
-- **Al colega**: confirmación con fecha, hora y lugar (se puede desactivar con
-  `CONFIG.CONFIRMAR_AL_COLEGA = false`).
-
-Límite de Gmail gratuito: ~100 correos/día (2 por registro ⇒ ~50 registros diarios).
-Si esperas más, pon `CONFIRMAR_AL_COLEGA = false`.
-
-## Cambiar el correo de notificación
-
-Edita `CONFIG.NOTIFICAR` en `backend/Code.gs` y vuelve a implementar
-(**Implementar → Administrar implementaciones → editar ✏️ → Versión: Nueva → Implementar**).
-La misma URL sigue funcionando.
+Si hace falta que cada colega reciba su confirmación por correo, usa la
+alternativa en `backend/Code.gs` (Google Apps Script + Google Sheets): envía los
+dos correos desde la cuenta de Gmail del Colegio. Requiere instalarlo desde esa
+cuenta de Google; los pasos están comentados dentro del archivo.
 
 ---
 
 ### Nota de seguridad
 
-Este repositorio **no contiene contraseñas ni claves de Google**. La única clave
-presente es `ADMIN_KEY` (acceso de lectura al listado); cámbiala si el repositorio
-es público.
+El repositorio no contiene contraseñas ni tokens. La única clave es la de lectura
+del panel (`casdt2026`); cámbiala si el repositorio queda público.
