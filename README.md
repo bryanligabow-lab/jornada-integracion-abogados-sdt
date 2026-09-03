@@ -55,6 +55,20 @@ backend-netlify/                 Backend de respaldo (Netlify + Blobs)
 
 La clave está en `CONFIG.ADMIN_KEY`, dentro de `backend/Code.gs`.
 
+## La hoja de cálculo
+
+Tiene dos pestañas:
+
+- **Resumen** — KPIs en vivo: registros, confirmados, no asisten, % de
+  confirmación, cuántos van a las actividades deportivas, último registro, y las
+  listas de *sí vienen* / *no podrán venir* con su celular. Son fórmulas: se
+  actualizan solas con cada inscripción nueva.
+- **Asistencia** — los datos crudos. La columna *Asistencia* se pinta verde o
+  roja automáticamente.
+
+Si alguna vez se desconfigura, se vuelve a armar con
+`GET /exec?admin=casdt2026&panel=1` o ejecutando `crearPanel` desde el editor.
+
 ## Tareas del organizador
 
 - **Ver quién se inscribió:** abre `lista.html` o la Hoja de Google.
@@ -84,8 +98,15 @@ URL y sube el cambio. Ojo: ese respaldo **no envía la confirmación al colega**
 ## Límites
 
 Gmail gratuito permite ~100 correos al día y aquí se envían 2 por registro, así que
-el techo son ~50 inscripciones diarias. Si esperas más, pon
-`CONFIG.CONFIRMAR_AL_COLEGA = false` y vuelve a implementar.
+el techo son ~50 inscripciones diarias. Consulta cuántos quedan con
+`GET /exec?ping=1` → campo `correosRestantesHoy`.
+
+Si te acercas al límite, pon `CONFIG.CONFIRMAR_AL_COLEGA = false` y vuelve a
+implementar: pasa a 1 correo por registro y duplicas la capacidad.
+
+**Quedarse sin cuota no pierde inscripciones.** La fila se guarda antes de enviar
+los correos y el envío va en `try/catch`; la respuesta trae `correo: "pendiente: …"`
+cuando falla, pero el registro entra igual.
 
 ### Nota de seguridad
 
